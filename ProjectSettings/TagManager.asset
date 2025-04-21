@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 3
+  tags:
+  - NP
+  - Audio
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - SolidObjects
+  - NPC
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 2977284205
+    locked: 0
+  - name: Foreground
+    uniqueID: 1404625633
+    locked: 0
+  - name: Collectables
+    uniqueID: 202523145
+    locked: 0
+  - name: Decorative
+    uniqueID: 1703136459
+    locked: 0
+  - name: Monster
+    uniqueID: 3052884559
+    locked: 0
+  - name: NPC
+    uniqueID: 494762039
+    locked: 0
+  - name: Player
+    uniqueID: 3950380067
+    locked: 0
+  m_RenderingLayers:
+  - Default
