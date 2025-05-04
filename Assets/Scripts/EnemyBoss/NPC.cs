@@ -1,97 +1,94 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using TMPro;
+using UnityEngine.UI;
 
 public class NPC : MonoBehaviour
 {
     public GameObject dialoguePanel;
-    public TMP_Text dialogueText;
-    public string[] dialogue;
-    private int index;
+    public List<GameObject> dialogueObjects;
+    public List<bool> isImageFlags;
 
-    public GameObject contButton;
-    public GameObject quizButton; // New quiz button
-    public float wordSpeed;
+    public Button continueButton;
+    public float wordSpeed = 0.02f;
     public bool playerIsClose;
+
+    private int index = 0;
+    private bool isTyping = false;
+
+    [Header("Optional: Disable Player Controls")]
+    public MonoBehaviour playerAttackScript;  // Drag your PlayerAttack script here
+    public AudioSource playerAudioSource;     // Drag your AudioSource here
 
     void Start()
     {
-        if (quizButton != null)
-            quizButton.SetActive(false); // Ensure quiz button is hidden at start
+        continueButton.onClick.AddListener(ShowNext);
+        dialoguePanel.SetActive(false);
 
-        dialoguePanel.SetActive(false); // Ensure dialogue panel is hidden at start
-        contButton.SetActive(false); // Ensure continue button is hidden
+        foreach (var obj in dialogueObjects)
+        {
+            obj.SetActive(false);
+        }
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.E) && playerIsClose)
         {
-            if (dialoguePanel.activeInHierarchy)
-            {
-                zeroText();
-            }
-            else
+            if (!dialoguePanel.activeInHierarchy)
             {
                 dialoguePanel.SetActive(true);
-                if (quizButton != null) quizButton.SetActive(false); // Hide quiz button when starting dialogue
-                StartCoroutine(Typing());
+                ShowNext();
+                DisablePlayerControl(true);
             }
         }
+    }
 
-        if (dialogueText.text == dialogue[index])
+    void ShowNext()
+    {
+        if (index >= dialogueObjects.Count || isTyping)
+            return;
+
+        GameObject currentObj = dialogueObjects[index];
+        bool isImage = isImageFlags[index];
+
+        currentObj.SetActive(true);
+
+        if (!isImage)
         {
-            contButton.SetActive(true);
+            TextMeshProUGUI tmp = currentObj.GetComponent<TextMeshProUGUI>();
+            StartCoroutine(TypeText(tmp));
+        }
+
+        index++;
+
+        if (index >= dialogueObjects.Count)
+        {
+            continueButton.interactable = false;
         }
     }
 
-    public void LoadScene(string sceneName)
+    IEnumerator TypeText(TextMeshProUGUI textComponent)
     {
-        SceneManager.LoadScene(sceneName);
-    }
+        isTyping = true;
 
-    public void zeroText()
-    {
-        dialogueText.text = "";
-        index = 0;
-        dialoguePanel.SetActive(false);
-        contButton.SetActive(false);
-        if (quizButton != null) quizButton.SetActive(false); // Hide quiz button when resetting dialogue
-    }
+        string fullText = textComponent.text;
+        textComponent.text = "";
 
-    IEnumerator Typing()
-    {
-        dialogueText.text = ""; // Ensure text is cleared before starting typing
-        foreach (char letter in dialogue[index].ToCharArray())
+        foreach (char c in fullText)
         {
-            dialogueText.text += letter;
+            textComponent.text += c;
             yield return new WaitForSeconds(wordSpeed);
         }
-    }
 
-    public void NextLine()
-    {
-        contButton.SetActive(false);
-        if (index < dialogue.Length - 1)
-        {
-            index++;
-            dialogueText.text = "";
-            StartCoroutine(Typing());
-        }
-        else
-        {
-            dialoguePanel.SetActive(false);
-            if (quizButton != null) quizButton.SetActive(true); // Show quiz button after last dialogue
-        }
+        isTyping = false;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
-        {
             playerIsClose = true;
-        }
     }
 
     private void OnTriggerExit2D(Collider2D other)
@@ -99,7 +96,30 @@ public class NPC : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerIsClose = false;
-            zeroText(); // Reset everything when player leaves
+            ResetDialogue();
+            DisablePlayerControl(false);
         }
+    }
+
+    void ResetDialogue()
+    {
+        foreach (var obj in dialogueObjects)
+        {
+            obj.SetActive(false);
+        }
+
+        index = 0;
+        isTyping = false;
+        continueButton.interactable = true;
+        dialoguePanel.SetActive(false);
+    }
+
+    void DisablePlayerControl(bool disabled)
+    {
+        if (playerAttackScript != null)
+            playerAttackScript.enabled = !disabled;
+
+        if (playerAudioSource != null)
+            playerAudioSource.mute = disabled;
     }
 }
