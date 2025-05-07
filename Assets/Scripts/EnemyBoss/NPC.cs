@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -11,6 +11,8 @@ public class NPC : MonoBehaviour
     public List<bool> isImageFlags;
 
     public Button continueButton;
+    public Button quizButton; // ✅ NEW: Quiz button reference
+
     public float wordSpeed = 0.02f;
     public bool playerIsClose;
 
@@ -30,6 +32,9 @@ public class NPC : MonoBehaviour
         {
             obj.SetActive(false);
         }
+
+        if (quizButton != null)
+            quizButton.gameObject.SetActive(false); // ✅ Hide quiz button on start
     }
 
     void Update()
@@ -66,6 +71,10 @@ public class NPC : MonoBehaviour
         if (index >= dialogueObjects.Count)
         {
             continueButton.interactable = false;
+
+            // ✅ Show quiz button now
+            if (quizButton != null)
+                quizButton.gameObject.SetActive(true);
         }
     }
 
@@ -112,6 +121,10 @@ public class NPC : MonoBehaviour
         isTyping = false;
         continueButton.interactable = true;
         dialoguePanel.SetActive(false);
+
+        // ✅ Also hide quiz button again if needed
+        if (quizButton != null)
+            quizButton.gameObject.SetActive(false);
     }
 
     void DisablePlayerControl(bool disabled)
