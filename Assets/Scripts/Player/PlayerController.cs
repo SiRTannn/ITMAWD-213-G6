@@ -25,6 +25,8 @@ public class PlayerController : MonoBehaviour
     private float walkSoundCooldown = 0.4f;
     private float walkSoundTimer = 0f;
 
+    public MathCManager mm;
+
     private void Awake()
     {
         audioManager = FindObjectOfType<INGAMEAM>();
@@ -150,5 +152,36 @@ public class PlayerController : MonoBehaviour
         SetMovementEnabled(false);
         rb.linearVelocity = Vector2.zero;
         myAnimator.SetBool("IsDead", true);
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        // Collect letter M
+        if (other.gameObject.CompareTag("CollectibleM"))
+        {
+            Destroy(other.gameObject); // Destroy the collectible object
+            mm.CollectItem('M'); // Collect the "M" letter
+        }
+
+        // Collect letter A
+        if (other.gameObject.CompareTag("CollectibleA"))
+        {
+            Destroy(other.gameObject); // Destroy the collectible object
+            mm.CollectItem('A'); // Collect the "A" letter
+        }
+
+        // Collect letter T
+        if (other.gameObject.CompareTag("CollectibleT"))
+        {
+            Destroy(other.gameObject); // Destroy the collectible object
+            mm.CollectItem('T'); // Collect the "T" letter
+        }
+
+        // Collect letter H
+        if (other.gameObject.CompareTag("CollectibleH"))
+        {
+            Destroy(other.gameObject); // Destroy the collectible object
+            mm.CollectItem('H'); // Collect the "H" letter
+        }
     }
 }

@@ -16,6 +16,7 @@ public class EntranceDialogue : MonoBehaviour
 
     void Update()
     {
+        // Allow next line only when dialogue is active and the player presses 'E'
         if (isDialogueActive && Input.GetKeyDown(KeyCode.E) && canPressNext)
         {
             NextLine();
@@ -24,29 +25,33 @@ public class EntranceDialogue : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // Start dialogue when the player enters the trigger area and hasn't already triggered the dialogue
         if (other.CompareTag("Player") && !hasPlayed)
         {
             hasPlayed = true;
             dialoguePanel.SetActive(true);
             isDialogueActive = true;
+            Time.timeScale = 0; // Freeze everything except dialogue
+
             StartCoroutine(Typing());
         }
     }
 
     IEnumerator Typing()
     {
-        canPressNext = false;
-        dialogueText.text = "";
+        canPressNext = false;  // Prevent pressing next line until current line is fully typed
+        dialogueText.text = ""; // Clear the text before typing the next one
         foreach (char letter in dialogue[index].ToCharArray())
         {
-            dialogueText.text += letter;
-            yield return new WaitForSeconds(wordSpeed);
+            dialogueText.text += letter; // Add one letter at a time to the text box
+            yield return new WaitForSecondsRealtime(wordSpeed); // Use WaitForSecondsRealtime to bypass time freeze
         }
-        canPressNext = true;
+        canPressNext = true; // Allow pressing next once the line is done typing
     }
 
     public void NextLine()
     {
+        // Move to the next line of dialogue
         if (index < dialogue.Length - 1)
         {
             index++;
@@ -60,10 +65,12 @@ public class EntranceDialogue : MonoBehaviour
 
     void EndDialogue()
     {
+        // End the dialogue and resume the game
         dialogueText.text = "";
         index = 0;
         isDialogueActive = false;
         canPressNext = false;
         dialoguePanel.SetActive(false);
+        Time.timeScale = 1; // Unfreeze the game
     }
 }
