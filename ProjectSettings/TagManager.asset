@@ -6,6 +6,13 @@ TagManager:
   tags:
   - NP
   - Audio
+  - MATH
+  - math
+  - CollectibleM
+  - Collectible
+  - CollectibleA
+  - CollectibleT
+  - CollectibleH
   layers:
   - Default
   - TransparentFX
