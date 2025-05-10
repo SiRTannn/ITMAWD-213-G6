@@ -23,6 +23,8 @@ public class NPC : MonoBehaviour
     public MonoBehaviour playerAttackScript;  // Drag your PlayerAttack script here
     public AudioSource playerAudioSource;     // Drag your AudioSource here
 
+    public MathCManager mathCManager;  // Add reference to MathCManager script to track collectables
+
     void Start()
     {
         continueButton.onClick.AddListener(ShowNext);
@@ -39,7 +41,8 @@ public class NPC : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E) && playerIsClose)
+        // Allow dialogue interaction only if player is close and all collectables have been found
+        if (Input.GetKeyDown(KeyCode.E) && playerIsClose && mathCManager.AllItemsCollected())
         {
             if (!dialoguePanel.activeInHierarchy)
             {
@@ -96,7 +99,7 @@ public class NPC : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && mathCManager.AllItemsCollected())  // Only allow interaction if items are collected
             playerIsClose = true;
     }
 
