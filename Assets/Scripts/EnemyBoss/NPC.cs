@@ -7,99 +7,197 @@ using UnityEngine.UI;
 public class NPC : MonoBehaviour
 {
     public GameObject dialoguePanel;
-    public List<GameObject> dialogueObjects;
-    public List<bool> isImageFlags;
+    public List<DialoguePanel> panels;
 
     public Button continueButton;
-    public Button quizButton; // ✅ NEW: Quiz button reference
+    public Button quizButton;
 
     public float wordSpeed = 0.02f;
     public bool playerIsClose;
 
-    private int index = 0;
+    private int currentPanelIndex = 0;
+    private int currentTextIndex = 0;
     private bool isTyping = false;
+    private bool lineFullyRevealed = false;
+
+    private Coroutine typingCoroutine;
+    private TMP_Text currentlyTypingText;
+    private string fullCurrentText;
 
     [Header("Optional: Disable Player Controls")]
-    public MonoBehaviour playerAttackScript;  // Drag your PlayerAttack script here
-    public AudioSource playerAudioSource;     // Drag your AudioSource here
+    public MonoBehaviour playerAttackScript;
+    public AudioSource playerAudioSource;
 
-    public MathCManager mathCManager;  // Add reference to MathCManager script to track collectables
+    public MathCManager mathCManager;
+    public NPCSceneReference nextScene;
 
     void Start()
     {
-        continueButton.onClick.AddListener(ShowNext);
-        dialoguePanel.SetActive(false);
-
-        foreach (var obj in dialogueObjects)
-        {
-            obj.SetActive(false);
-        }
+        continueButton.onClick.AddListener(HandleNext);
 
         if (quizButton != null)
-            quizButton.gameObject.SetActive(false); // ✅ Hide quiz button on start
+        {
+            quizButton.gameObject.SetActive(false);
+            quizButton.onClick.AddListener(LoadQuizScene);
+        }
+
+        dialoguePanel.SetActive(false);
+
+        foreach (var panel in panels)
+        {
+            panel.panelObject.SetActive(false);
+            foreach (var text in panel.dialogueTexts)
+            {
+                text.gameObject.SetActive(false);
+            }
+        }
     }
 
     void Update()
     {
-        // Allow dialogue interaction only if player is close and all collectables have been found
         if (Input.GetKeyDown(KeyCode.E) && playerIsClose && mathCManager.AllItemsCollected())
         {
             if (!dialoguePanel.activeInHierarchy)
             {
                 dialoguePanel.SetActive(true);
-                ShowNext();
+                ShowPanel(currentPanelIndex);
                 DisablePlayerControl(true);
             }
         }
     }
 
-    void ShowNext()
+    void ShowPanel(int index)
     {
-        if (index >= dialogueObjects.Count || isTyping)
-            return;
-
-        GameObject currentObj = dialogueObjects[index];
-        bool isImage = isImageFlags[index];
-
-        currentObj.SetActive(true);
-
-        if (!isImage)
+        if (index >= panels.Count)
         {
-            TextMeshProUGUI tmp = currentObj.GetComponent<TextMeshProUGUI>();
-            StartCoroutine(TypeText(tmp));
+            EndDialogue();
+            return;
         }
 
-        index++;
+        foreach (var panel in panels)
+        {
+            panel.panelObject.SetActive(false);
+            foreach (var text in panel.dialogueTexts)
+            {
+                if (text != null)
+                    text.gameObject.SetActive(false);
+            }
 
-        if (index >= dialogueObjects.Count)
+            if (panel.lessonTitle != null)
+                panel.lessonTitle.gameObject.SetActive(false);
+        }
+
+        DialoguePanel currentPanel = panels[index];
+
+        currentPanel.panelObject.SetActive(true);
+
+        if (currentPanel.lessonTitle != null)
+        {
+            currentPanel.lessonTitle.gameObject.SetActive(true);
+        }
+
+        currentTextIndex = 0;
+        ShowTextLine(index, 0);
+    }
+
+    void ShowTextLine(int panelIndex, int textIndex)
+    {
+        if (textIndex >= panels[panelIndex].dialogueTexts.Length)
+        {
+            // Don't call ShowPanel() here anymore
+            return;
+        }
+
+        TMP_Text currentText = panels[panelIndex].dialogueTexts[textIndex];
+        currentText.gameObject.SetActive(true);
+        currentlyTypingText = currentText;
+        fullCurrentText = currentText.text;
+        typingCoroutine = StartCoroutine(TypeText(currentText));
+    }
+
+    IEnumerator TypeText(TMP_Text textComponent)
+    {
+        isTyping = true;
+        lineFullyRevealed = false;
+        textComponent.text = "";
+
+        foreach (char c in fullCurrentText)
+        {
+            textComponent.text += c;
+            yield return new WaitForSecondsRealtime(wordSpeed);
+        }
+
+        isTyping = false;
+        lineFullyRevealed = true;
+    }
+
+    public void HandleNext()
+    {
+        if (!lineFullyRevealed)
+        {
+            if (typingCoroutine != null)
+            {
+                StopCoroutine(typingCoroutine);
+                typingCoroutine = null;
+            }
+
+            currentlyTypingText.text = fullCurrentText;
+            isTyping = false;
+            lineFullyRevealed = true;
+            return;
+        }
+
+        currentTextIndex++;
+        if (currentPanelIndex < panels.Count &&
+            currentTextIndex < panels[currentPanelIndex].dialogueTexts.Length)
+        {
+            ShowTextLine(currentPanelIndex, currentTextIndex);
+        }
+        else
+        {
+            currentPanelIndex++;
+            ShowPanel(currentPanelIndex);
+        }
+
+        if (currentPanelIndex >= panels.Count)
         {
             continueButton.interactable = false;
-
-            // ✅ Show quiz button now
             if (quizButton != null)
                 quizButton.gameObject.SetActive(true);
         }
     }
 
-    IEnumerator TypeText(TextMeshProUGUI textComponent)
+    void EndDialogue()
     {
-        isTyping = true;
-
-        string fullText = textComponent.text;
-        textComponent.text = "";
-
-        foreach (char c in fullText)
+        foreach (var panel in panels)
         {
-            textComponent.text += c;
-            yield return new WaitForSeconds(wordSpeed);
+            panel.panelObject.SetActive(false);
         }
 
+        dialoguePanel.SetActive(false);
+        currentPanelIndex = 0;
+        currentTextIndex = 0;
         isTyping = false;
+        continueButton.interactable = true;
+
+        if (quizButton != null)
+            quizButton.gameObject.SetActive(false);
+
+        Time.timeScale = 1;
+        DisablePlayerControl(false);
+    }
+
+    void LoadQuizScene()
+    {
+        if (nextScene != null && !string.IsNullOrEmpty(nextScene.ScenePath))
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(nextScene.ScenePath);
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player") && mathCManager.AllItemsCollected())  // Only allow interaction if items are collected
+        if (other.CompareTag("Player") && mathCManager.AllItemsCollected())
             playerIsClose = true;
     }
 
@@ -108,26 +206,8 @@ public class NPC : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerIsClose = false;
-            ResetDialogue();
-            DisablePlayerControl(false);
+            EndDialogue();
         }
-    }
-
-    void ResetDialogue()
-    {
-        foreach (var obj in dialogueObjects)
-        {
-            obj.SetActive(false);
-        }
-
-        index = 0;
-        isTyping = false;
-        continueButton.interactable = true;
-        dialoguePanel.SetActive(false);
-
-        // ✅ Also hide quiz button again if needed
-        if (quizButton != null)
-            quizButton.gameObject.SetActive(false);
     }
 
     void DisablePlayerControl(bool disabled)

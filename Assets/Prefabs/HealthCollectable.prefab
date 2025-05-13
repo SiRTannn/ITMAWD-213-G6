@@ -124,7 +124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc743d6dc5885204fac3fb37e17c3d00, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _healthAmount: 5
+  _healthAmount: 10
 --- !u!1 &6791934785113619721 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5832521026272834703, guid: dabf19900f7f5f6479ca4c2533d5af6f, type: 3}
